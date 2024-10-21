@@ -97,7 +97,12 @@ app.get('/repository/:id/object/:object_id', async (req, res) => {
 
         console.log(id, object_id);
 
-        let repository = repositories.find(repo => repo.id === Number(id));
+        let repository = repositories?.find(repo => repo.id === Number(id));
+
+        if(!repository) {
+            res.status(404).send({message: 'Repository not found'}); 
+        }
+
         let requestedObject = repository.objects.filter((obj) => obj.object_id === Number(object_id));
 
         if(requestedObject.length) {
