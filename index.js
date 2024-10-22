@@ -96,8 +96,6 @@ app.get('/repository/:id/object/:object_id', async (req, res) => {
     try {
         const { id, object_id } = req.params;
 
-        console.log(id, object_id);
-
         let repository = repositories?.find(repo => repo.id === Number(id));
 
         if (!repository) {
@@ -146,8 +144,6 @@ app.put('/repository/object/:object_id', async (req, res) => {
         
 
         let existingObjectIdx = repository.objects.findIndex(obj => obj.object_id === object_id);
-
-        console.log(existingObjectIdx)
 
         if (existingObjectIdx !== -1) {
 
