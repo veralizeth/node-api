@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const app = express();
 const port = 3000;
 
@@ -99,13 +100,13 @@ app.get('/repository/:id/object/:object_id', async (req, res) => {
 
         let repository = repositories?.find(repo => repo.id === Number(id));
 
-        if(!repository) {
-            res.status(404).send({message: 'Repository not found'}); 
+        if (!repository) {
+            res.status(404).send({ message: 'Repository not found' });
         }
 
         let requestedObject = repository.objects.filter((obj) => obj.object_id === Number(object_id));
 
-        if(requestedObject.length) {
+        if (requestedObject.length) {
             res.status(200).send(requestedObject);
         } else {
             res.status(404).send({ message: "Object not found" });
@@ -115,6 +116,61 @@ app.get('/repository/:id/object/:object_id', async (req, res) => {
         res.status(500).send({ message: 'An error occurred while retrieving the object.' });
     }
 })
+
+
+app.put('/repository/object/:object_id', async (req, res) => {
+    try {
+        const { object_id } = req.params;
+        const objectData = req.body;
+
+        if (!objectData) {
+            res.status(400).send({ message: 'Repository object is required' });
+        }
+
+        if (!objectData.name) {
+            res.status(400).send({ message: 'Repository name is required to create a repo' });
+        }
+
+        const repositoryId = crypto.createHash('sha256').update(JSON.stringify(objectData)).digest('hex');
+
+        let repository = repositories?.find(repo => repo.id === repositoryId);
+
+        if (!repository) {
+            repository = {
+                id: repositoryId,
+                ...objectData,
+                objects: []
+            }
+            repositories.push(repository);
+        };
+        
+
+        let existingObjectIdx = repository.objects.findIndex(obj => obj.object_id === object_id);
+
+        console.log(existingObjectIdx)
+
+        if (existingObjectIdx !== -1) {
+
+            repository.objects[existingObjectIdx] = {
+                object_id: Number(object_id),
+                ...objectData.objects
+            }
+            
+            return res.status(200).send({ message: 'Object updated successfully' });
+        } else {
+            // Create a new entry. 
+            repository.objects.push({
+                object_id: Number(object_id),
+                ...objectData.objects
+            });
+
+            return res.status(201).send({ message: 'Object created successfully' });
+        }
+    } catch (Error) {
+        console.error('Error saving object', Error);
+        res.status(500).send({message: 'An error occurre while saving the object'});
+    }
+});
 
 // Start the server
 app.listen(port, () => {
